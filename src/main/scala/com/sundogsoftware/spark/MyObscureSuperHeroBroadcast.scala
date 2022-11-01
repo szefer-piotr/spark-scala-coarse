@@ -4,35 +4,27 @@ import com.sundogsoftware.spark.MostPopularSuperheroDataset.SuperHero
 import org.apache.log4j._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, size, split, sum, udf}
-import org.apache.spark.sql.types.{IntegerType, StructType}
-
+import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 import scala.io.{Codec, Source}
 
 object MyObscureSuperHeroBroadcast {
 
-  //case class SuperHeroNames(id: Int, name: String)
+  // I need to revise how the data are being read into the nameDict
 
-  def loadHeroNames() : Map[Int, String] = {
-    implicit val codec: Codec = Codec("ISO-8859-1")
-    var heroNames:Map[Int, String] = Map()
-    val lines = Source.fromFile("data/Marvel-names.txt")
+  // So first of all create the class that has an integer for an ID and a string for a super hero name
+  case class SuperHeroNames(id: Int, name: String)
 
-    for (line <- lines.getLines()){
-      val fields = line.split(" ")
-      if (fields.length > 1){
-        heroNames += (fields(0).toInt -> fields(1))
-      }
-    }
-
-    lines.close()
-
-    heroNames
-  }
-
-  /** Main function where the action happens */
   def main(args: Array[String]): Unit ={
 
     Logger.getLogger("org").setLevel(Level.ERROR)
+
+    // New schema... what is is for? To give names to columns?
+    val superHeroNamesSchema = new StructType()
+      .add("id", IntegerType, nullable = true)
+      .add("name", StringType, nullable = true)
+
+    import spark.implicits._
+    // Create spark SESSION
 
     val spark = SparkSession
       .builder
@@ -40,8 +32,15 @@ object MyObscureSuperHeroBroadcast {
       .master("local[*]")
       .getOrCreate()
 
-    // Load her names
-    val nameDict = spark.sparkContext.broadcast(loadHeroNames())
+    // It seems that I can read within the spark session
+    val names = spark.read
+      .schema(superHeroNamesSchema)
+      .option("sep", " ")
+      .csv("data/Marvel-names.txt")
+      .as[SuperHeroNames]
+
+    // Load hero names
+    val nameDict = spark.sparkContext.broadcast(names)
 
     println(nameDict)
 
@@ -55,7 +54,6 @@ object MyObscureSuperHeroBroadcast {
     val lines = spark.read
       .text("data/Marvel-graph.txt")
 
-    import spark.implicits._
     val connections = lines
       .withColumn("id", split(col("value"), " ")(0))
       .withColumn("connections", size(split(col("value"), " ")) - 1)
