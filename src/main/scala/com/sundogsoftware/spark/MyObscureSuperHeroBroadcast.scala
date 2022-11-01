@@ -10,11 +10,19 @@ import scala.io.{Codec, Source}
 
 object MyObscureSuperHeroBroadcast {
 
-  //case class SuperHeroNames(id: Int, name: String)
+  // I need to revise how the data are being read into the nameDict
+
+  // So first of all create the class superhero
+  case class SuperHeroNames(id: Int, name: String)
 
   def loadHeroNames() : Map[Int, String] = {
+
     implicit val codec: Codec = Codec("ISO-8859-1")
+
+    // Create a map
     var heroNames:Map[Int, String] = Map()
+
+    // Read
     val lines = Source.fromFile("data/Marvel-names.txt")
 
     for (line <- lines.getLines()){
