@@ -5,6 +5,7 @@ import org.apache.log4j._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.{col, size, split, sum, udf}
 import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
+
 import scala.io.{Codec, Source}
 
 object MyObscureSuperHeroBroadcast {
@@ -23,7 +24,6 @@ object MyObscureSuperHeroBroadcast {
       .add("id", IntegerType, nullable = true)
       .add("name", StringType, nullable = true)
 
-    import spark.implicits._
     // Create spark SESSION
 
     val spark = SparkSession
@@ -32,12 +32,16 @@ object MyObscureSuperHeroBroadcast {
       .master("local[*]")
       .getOrCreate()
 
+    import spark.implicits._
+
     // It seems that I can read within the spark session
     val names = spark.read
       .schema(superHeroNamesSchema)
       .option("sep", " ")
       .csv("data/Marvel-names.txt")
       .as[SuperHeroNames]
+
+    val nameDict = names()
 
     // Load hero names
     val nameDict = spark.sparkContext.broadcast(names)
@@ -47,9 +51,9 @@ object MyObscureSuperHeroBroadcast {
     // Is there a need to create a schema here? Create a schema, then get the connections
     // and create a dataset with that schema
     // seems like it is not necessary!!!
-    val heroSchema = new StructType()
-      .add("heroID", IntegerType, nullable = true)
-      .add("connections", IntegerType, nullable = true)
+    //val heroSchema = new StructType()
+    // .add("heroID", IntegerType, nullable = true)
+    // .add("connections", IntegerType, nullable = true)
 
     val lines = spark.read
       .text("data/Marvel-graph.txt")
@@ -62,16 +66,16 @@ object MyObscureSuperHeroBroadcast {
     val obscureHeroes = connections
       .filter($"connections" === 1)
 
-    val lookupName : Int => String = (heroID:Int) => {
-      nameDict.value(heroID)
-    }
+    //val lookupName : Int => String = (heroID:Int) => {
+    //  nameDict.value(heroID)
+    //}
 
-    val lookupNameUDF = udf(lookupName)
+    //val lookupNameUDF = udf(lookupName)
 
     // Now just add names there
-    val heroesWithNames = obscureHeroes.withColumn("heroName", lookupNameUDF(col("id")))
+    //val heroesWithNames = obscureHeroes.withColumn("heroName", lookupNameUDF(col("id")))
 
-    heroesWithNames.show(truncate = false)
+    //heroesWithNames.show(truncate = false)
 
     spark.stop()
 
