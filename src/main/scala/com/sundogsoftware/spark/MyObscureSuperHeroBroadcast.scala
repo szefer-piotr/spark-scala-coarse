@@ -41,12 +41,12 @@ object MyObscureSuperHeroBroadcast {
       .csv("data/Marvel-names.txt")
       .as[SuperHeroNames]
 
-    val nameDict = names()
+    //val nameDict = names()
 
     // Load hero names
-    val nameDict = spark.sparkContext.broadcast(names)
+    //val nameDict = spark.sparkContext.broadcast(names)
 
-    println(nameDict)
+    //println(nameDict)
 
     // Is there a need to create a schema here? Create a schema, then get the connections
     // and create a dataset with that schema

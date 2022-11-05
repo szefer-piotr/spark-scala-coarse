@@ -20,7 +20,7 @@ object MyMostObscureSuperheroSolution {
     // Create SparkSession using every core of the local machine
     val spark = SparkSession
       .builder()
-      .appName("MyMostObscureSuperhero")
+      .appName("MyMostObscureSuperheroSolution")
       .master("local[*]")
       .getOrCreate()
 
